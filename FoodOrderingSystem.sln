@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36327.8 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FoodOrderingSystem", "WinFormsApp1\FoodOrderingSystem.csproj", "{3A4B8B0A-46D9-460D-B54F-AEAEEB7F8A53}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3A4B8B0A-46D9-460D-B54F-AEAEEB7F8A53}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3A4B8B0A-46D9-460D-B54F-AEAEEB7F8A53}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3A4B8B0A-46D9-460D-B54F-AEAEEB7F8A53}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3A4B8B0A-46D9-460D-B54F-AEAEEB7F8A53}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {CCC5596E-B4A1-43D0-9DC5-7A128CDB0C64}
+	EndGlobalSection
+EndGlobal
