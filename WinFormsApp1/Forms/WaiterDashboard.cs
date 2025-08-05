@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-// Forms/WaiterDashboard.cs
+﻿// Forms/WaiterDashboard.cs
 using FoodOrderingSystem.Services;
 using FoodOrderingSystem.Models;
 
@@ -36,7 +30,7 @@ namespace FoodOrderingSystem.Forms
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading menu: {ex.Message}", "Error",
+                MessageBox.Show($"Error loading menu: {ex.Message}\n\nPlease check the database connection and try refreshing.", "Menu Loading Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -132,36 +126,44 @@ namespace FoodOrderingSystem.Forms
                 return;
             }
 
-            var selectedItem = (MenuItem)lvMenu.SelectedItems[0].Tag;
-            var quantity = (int)nudQuantity.Value;
-            var specialInstructions = txtSpecialInstructions.Text.Trim();
-
-            // Check if item already exists in current order
-            var existingItem = currentOrder.FirstOrDefault(oi => oi.ItemID == selectedItem.ItemID &&
-                                                                 oi.SpecialInstructions == specialInstructions);
-
-            if (existingItem != null)
+            try
             {
-                existingItem.Quantity += quantity;
-            }
-            else
-            {
-                currentOrder.Add(new OrderItemRequest
+                var selectedItem = (MenuItem)lvMenu.SelectedItems[0].Tag;
+                var quantity = (int)nudQuantity.Value;
+                var specialInstructions = txtSpecialInstructions.Text.Trim();
+
+                // Check if item already exists in current order
+                var existingItem = currentOrder.FirstOrDefault(oi => oi.ItemID == selectedItem.ItemID &&
+                                                                     oi.SpecialInstructions == specialInstructions);
+
+                if (existingItem != null)
                 {
-                    ItemID = selectedItem.ItemID,
-                    Quantity = quantity,
-                    SpecialInstructions = string.IsNullOrEmpty(specialInstructions) ? null : specialInstructions
-                });
+                    existingItem.Quantity += quantity;
+                }
+                else
+                {
+                    currentOrder.Add(new OrderItemRequest
+                    {
+                        ItemID = selectedItem.ItemID,
+                        Quantity = quantity,
+                        SpecialInstructions = string.IsNullOrEmpty(specialInstructions) ? null : specialInstructions
+                    });
+                }
+
+                RefreshCurrentOrder();
+
+                // Reset form
+                nudQuantity.Value = 1;
+                txtSpecialInstructions.Clear();
+
+                MessageBox.Show($"Added {quantity}x {selectedItem.Name} to order!", "Item Added",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
-
-            RefreshCurrentOrder();
-
-            // Reset form
-            nudQuantity.Value = 1;
-            txtSpecialInstructions.Clear();
-
-            MessageBox.Show($"Added {quantity}x {selectedItem.Name} to order!", "Item Added",
-                MessageBoxButtons.OK, MessageBoxIcon.Information);
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error adding item to order: {ex.Message}", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void RefreshCurrentOrder()
@@ -171,7 +173,24 @@ namespace FoodOrderingSystem.Forms
 
             foreach (var orderItem in currentOrder)
             {
+                // Find the menu item - search in the loaded menuItems list first
                 var menuItem = menuItems.FirstOrDefault(mi => mi.ItemID == orderItem.ItemID);
+
+                // If not found in current list, we need to load it
+                if (menuItem == null)
+                {
+                    // This should not happen if menu is loaded properly, but let's handle it
+                    try
+                    {
+                        menuItem = MenuService.GetMenuItemByIdAsync(orderItem.ItemID).Result;
+                    }
+                    catch
+                    {
+                        // Skip this item if we can't load it
+                        continue;
+                    }
+                }
+
                 if (menuItem != null)
                 {
                     var listItem = new ListViewItem(menuItem.Name);
@@ -187,7 +206,8 @@ namespace FoodOrderingSystem.Forms
             }
 
             lblOrderTotal.Text = $"Order Total: ${total:F2}";
-            btnSubmitOrder.Enabled = currentOrder.Count > 0 && cmbTable.SelectedIndex > 0;
+            // FIX: Enable button when there are items, regardless of table selection
+            btnSubmitOrder.Enabled = currentOrder.Count > 0;
         }
 
         private void btnRemoveFromOrder_Click(object sender, EventArgs e)
@@ -220,6 +240,7 @@ namespace FoodOrderingSystem.Forms
 
         private async void btnSubmitOrder_Click(object sender, EventArgs e)
         {
+            // Validation checks with detailed messages
             if (currentOrder.Count == 0)
             {
                 MessageBox.Show("Please add items to the order first.", "Empty Order",
@@ -227,43 +248,93 @@ namespace FoodOrderingSystem.Forms
                 return;
             }
 
+            // Check table selection at submission time, not before
             if (cmbTable.SelectedIndex <= 0)
             {
-                MessageBox.Show("Please select a table.", "No Table Selected",
+                MessageBox.Show("Please select a table before submitting the order.", "No Table Selected",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                cmbTable.Focus(); // Focus on the table combo box
+                return;
+            }
+
+            if (AuthenticationService.CurrentUser == null)
+            {
+                MessageBox.Show("User session expired. Please login again.", "Session Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
 
             try
             {
+                // Show loading state
                 btnSubmitOrder.Enabled = false;
                 btnSubmitOrder.Text = "Submitting...";
 
                 // Extract table ID from combo box text
                 string tableText = cmbTable.SelectedItem.ToString()!;
-                int tableId = int.Parse(tableText.Split(' ')[1]);
 
-                // Get waiter ID (assuming we have a way to get this)
-                int waiterId = AuthenticationService.CurrentUser!.UserID;
+                // Parse table ID more carefully
+                int tableId;
+                try
+                {
+                    // Extract number from "Table X (Capacity: Y)" format
+                    var parts = tableText.Split(' ');
+                    if (parts.Length < 2 || !int.TryParse(parts[1], out tableId))
+                    {
+                        throw new Exception($"Could not parse table ID from: {tableText}");
+                    }
+                }
+                catch (Exception parseEx)
+                {
+                    MessageBox.Show($"Error parsing selected table: {parseEx.Message}", "Parsing Error",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
 
+                // Get waiter ID
+                int waiterId = AuthenticationService.CurrentUser.UserID;
+     
+                // Create the order
                 int orderId = await OrderService.CreateOrderAsync(tableId, waiterId, currentOrder);
 
-                MessageBox.Show($"Order #{orderId} submitted successfully!\nSent to kitchen for preparation.",
+                // Success!
+                MessageBox.Show($"Order #{orderId} submitted successfully!\n" +
+                               $"Table: {tableId}\n" +
+                               $"Items: {currentOrder.Count}\n" +
+                               $"Total: {lblOrderTotal.Text}\n\n" +
+                               $"Order sent to kitchen for preparation.",
                     "Order Submitted", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                 // Clear the order and refresh
                 currentOrder.Clear();
                 RefreshCurrentOrder();
                 LoadTables(); // Refresh available tables
+                LoadOrderHistory(); // Refresh order history
+
+                // Reset table selection
+                cmbTable.SelectedIndex = 0;
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error submitting order: {ex.Message}", "Error",
+                // Show detailed error information
+                var errorMessage = $"Error submitting order: {ex.Message}\n\n";
+                errorMessage += $"Details:\n";
+                errorMessage += $"- Current User: {AuthenticationService.CurrentUser?.Name ?? "None"}\n";
+                errorMessage += $"- Selected Table: {cmbTable.SelectedItem?.ToString() ?? "None"}\n";
+                errorMessage += $"- Order Items: {currentOrder.Count}\n";
+
+                if (ex.InnerException != null)
+                {
+                    errorMessage += $"- Inner Exception: {ex.InnerException.Message}\n";
+                }
+
+                MessageBox.Show(errorMessage, "Submit Order Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally
             {
-                btnSubmitOrder.Enabled = true;
+                // Reset button state - Enable if there are still items
+                btnSubmitOrder.Enabled = currentOrder.Count > 0;
                 btnSubmitOrder.Text = "Submit Order";
             }
         }
@@ -304,6 +375,10 @@ namespace FoodOrderingSystem.Forms
                     listItem.SubItems.Add(order.Status);
                     listItem.SubItems.Add($"${order.TotalPrice:F2}");
                     listItem.SubItems.Add($"{order.OrderItems.Sum(oi => oi.Quantity)} items");
+
+                    // Add order details
+                    var details = string.Join(", ", order.OrderItems.Select(oi => $"{oi.Quantity}x {oi.MenuItem.Name}"));
+                    listItem.SubItems.Add(details);
                     listItem.Tag = order;
 
                     // Color code by status
@@ -334,6 +409,5 @@ namespace FoodOrderingSystem.Forms
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
-
     }
 }

@@ -286,7 +286,7 @@ namespace FoodOrderingSystem.Forms
             this.gbCurrentOrder.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
             this.gbCurrentOrder.Location = new Point(710, 170);
             this.gbCurrentOrder.Name = "gbCurrentOrder";
-            this.gbCurrentOrder.Size = new Size(432, 420); // Stretch to bottom
+            this.gbCurrentOrder.Size = new Size(432, 420); // Ensure proper size
             this.gbCurrentOrder.TabIndex = 3;
             this.gbCurrentOrder.TabStop = false;
             this.gbCurrentOrder.Text = "Current Order";
@@ -316,12 +316,13 @@ namespace FoodOrderingSystem.Forms
             this.btnRemoveFromOrder.FlatStyle = FlatStyle.Flat;
             this.btnRemoveFromOrder.Font = new Font("Segoe UI", 8F);
             this.btnRemoveFromOrder.ForeColor = Color.White;
-            this.btnRemoveFromOrder.Location = new Point(10, 315);
+            this.btnRemoveFromOrder.Location = new Point(10, 310);
             this.btnRemoveFromOrder.Name = "btnRemoveFromOrder";
             this.btnRemoveFromOrder.Size = new Size(70, 25);
             this.btnRemoveFromOrder.TabIndex = 1;
             this.btnRemoveFromOrder.Text = "Remove";
             this.btnRemoveFromOrder.UseVisualStyleBackColor = false;
+            this.btnRemoveFromOrder.Cursor = Cursors.Hand;
             this.btnRemoveFromOrder.Click += new EventHandler(this.btnRemoveFromOrder_Click);
 
             // btnClearOrder
@@ -330,19 +331,20 @@ namespace FoodOrderingSystem.Forms
             this.btnClearOrder.FlatStyle = FlatStyle.Flat;
             this.btnClearOrder.Font = new Font("Segoe UI", 8F);
             this.btnClearOrder.ForeColor = Color.White;
-            this.btnClearOrder.Location = new Point(90, 315);
+            this.btnClearOrder.Location = new Point(90, 310);
             this.btnClearOrder.Name = "btnClearOrder";
             this.btnClearOrder.Size = new Size(50, 25);
             this.btnClearOrder.TabIndex = 2;
             this.btnClearOrder.Text = "Clear";
             this.btnClearOrder.UseVisualStyleBackColor = false;
+            this.btnClearOrder.Cursor = Cursors.Hand;
             this.btnClearOrder.Click += new EventHandler(this.btnClearOrder_Click);
 
             // lblTable
             this.lblTable.Anchor = ((AnchorStyles)((AnchorStyles.Bottom | AnchorStyles.Left)));
             this.lblTable.AutoSize = true;
             this.lblTable.Font = new Font("Segoe UI", 9F);
-            this.lblTable.Location = new Point(10, 350);
+            this.lblTable.Location = new Point(10, 345);
             this.lblTable.Name = "lblTable";
             this.lblTable.Size = new Size(35, 15);
             this.lblTable.TabIndex = 3;
@@ -352,7 +354,7 @@ namespace FoodOrderingSystem.Forms
             this.cmbTable.Anchor = ((AnchorStyles)((AnchorStyles.Bottom | AnchorStyles.Left)));
             this.cmbTable.DropDownStyle = ComboBoxStyle.DropDownList;
             this.cmbTable.Font = new Font("Segoe UI", 9F);
-            this.cmbTable.Location = new Point(50, 347);
+            this.cmbTable.Location = new Point(50, 342);
             this.cmbTable.Name = "cmbTable";
             this.cmbTable.Size = new Size(150, 23);
             this.cmbTable.TabIndex = 4;
@@ -362,7 +364,7 @@ namespace FoodOrderingSystem.Forms
             this.lblOrderTotal.AutoSize = true;
             this.lblOrderTotal.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
             this.lblOrderTotal.ForeColor = Color.FromArgb(40, 167, 69);
-            this.lblOrderTotal.Location = new Point(10, 380);
+            this.lblOrderTotal.Location = new Point(10, 375);
             this.lblOrderTotal.Name = "lblOrderTotal";
             this.lblOrderTotal.Size = new Size(120, 19);
             this.lblOrderTotal.TabIndex = 5;
@@ -371,17 +373,30 @@ namespace FoodOrderingSystem.Forms
             // btnSubmitOrder
             this.btnSubmitOrder.Anchor = ((AnchorStyles)((AnchorStyles.Bottom | AnchorStyles.Right)));
             this.btnSubmitOrder.BackColor = Color.FromArgb(51, 122, 183);
-            this.btnSubmitOrder.Enabled = false;
+            this.btnSubmitOrder.Enabled = false; 
             this.btnSubmitOrder.FlatStyle = FlatStyle.Flat;
+            this.btnSubmitOrder.FlatAppearance.BorderColor = Color.FromArgb(51, 122, 183);
+            this.btnSubmitOrder.FlatAppearance.BorderSize = 1;
             this.btnSubmitOrder.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
             this.btnSubmitOrder.ForeColor = Color.White;
-            this.btnSubmitOrder.Location = new Point(290, 345);
+            this.btnSubmitOrder.Location = new Point(280, 340);
             this.btnSubmitOrder.Name = "btnSubmitOrder";
-            this.btnSubmitOrder.Size = new Size(130, 60);
+            this.btnSubmitOrder.Size = new Size(140, 50);
             this.btnSubmitOrder.TabIndex = 6;
             this.btnSubmitOrder.Text = "Submit Order";
             this.btnSubmitOrder.UseVisualStyleBackColor = false;
+            this.btnSubmitOrder.Cursor = Cursors.Hand;
             this.btnSubmitOrder.Click += new EventHandler(this.btnSubmitOrder_Click);
+
+            // Add hover effect - only when enabled
+            this.btnSubmitOrder.MouseEnter += (s, e) => {
+                if (btnSubmitOrder.Enabled)
+                    btnSubmitOrder.BackColor = Color.FromArgb(40, 96, 144);
+            };
+            this.btnSubmitOrder.MouseLeave += (s, e) => {
+                if (btnSubmitOrder.Enabled)
+                    btnSubmitOrder.BackColor = Color.FromArgb(51, 122, 183);
+            };
 
             // WaiterDashboard
             this.AutoScaleDimensions = new SizeF(7F, 15F);

@@ -36,14 +36,47 @@ namespace FoodOrderingSystem.Data
 
             try
             {
-                // Create database if it doesn't exist
-                await context.Database.EnsureCreatedAsync();
+                Console.WriteLine("Initializing database...");
 
-                Console.WriteLine("Database initialized successfully!");
+                // Test connection first
+                bool canConnect = await context.Database.CanConnectAsync();
+                Console.WriteLine($"Database connection test: {(canConnect ? "SUCCESS" : "FAILED")}");
+
+                if (!canConnect)
+                {
+                    Console.WriteLine("Attempting to create database...");
+                }
+
+                // Create database if it doesn't exist
+                bool created = await context.Database.EnsureCreatedAsync();
+                Console.WriteLine($"Database creation: {(created ? "CREATED NEW" : "ALREADY EXISTS")}");
+
+                // Apply any pending migrations
+                var pendingMigrations = await context.Database.GetPendingMigrationsAsync();
+                if (pendingMigrations.Any())
+                {
+                    Console.WriteLine($"Applying {pendingMigrations.Count()} pending migrations...");
+                    await context.Database.MigrateAsync();
+                }
+
+                // Test with a simple query
+                var userCount = await context.Users.CountAsync();
+                Console.WriteLine($"Database initialized successfully! Users in database: {userCount}");
+
+                // Verify seed data
+                if (userCount == 0)
+                {
+                    Console.WriteLine("WARNING: No users found in database. Seed data may not have been created.");
+                }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error initializing database: {ex.Message}");
+                Console.WriteLine($"Connection string: {GetConnectionString()}");
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                }
                 throw;
             }
         }
