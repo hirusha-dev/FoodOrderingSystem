@@ -61,7 +61,7 @@ namespace FoodOrderingSystem.Forms
             this.lblTitle.AutoSize = true;
             this.lblTitle.Font = new Font("Segoe UI", 16F, FontStyle.Bold);
             this.lblTitle.ForeColor = Color.FromArgb(51, 122, 183);
-            this.lblTitle.Location = new Point(80, 20);
+            this.lblTitle.Location = new Point(50, 20);
             this.lblTitle.Size = new Size(200, 30);
             this.lblTitle.Text = "Food Ordering System";
 
