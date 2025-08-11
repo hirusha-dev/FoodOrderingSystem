@@ -16,7 +16,9 @@ namespace FoodOrderingSystem
             try
             {
                 // Initialize database
+                Console.WriteLine("Initializing application...");
                 await DatabaseService.InitializeDatabaseAsync();
+                Console.WriteLine("Database initialization completed.");
 
                 // Show login form
                 using var loginForm = new LoginForm();
@@ -29,17 +31,28 @@ namespace FoodOrderingSystem
                         "Waiter" => new WaiterDashboard(),
                         "Chef" => new ChefDashboard(),
                         "Manager" => new ManagerDashboard(),
-                        _ => throw new InvalidOperationException("Unknown user role")
+                        _ => throw new InvalidOperationException($"Unknown user role: {AuthenticationService.CurrentUser?.Role}")
                     };
 
+                    Console.WriteLine($"Starting dashboard for {AuthenticationService.CurrentUser?.Role}: {AuthenticationService.CurrentUser?.Name}");
                     Application.Run(mainForm);
+                }
+                else
+                {
+                    Console.WriteLine("Login cancelled or failed.");
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Application startup error: {ex.Message}", "Error",
+                var errorMessage = $"Application startup error: {ex.Message}";
+                Console.WriteLine(errorMessage);
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+
+                MessageBox.Show(errorMessage, "Application Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+
+            Console.WriteLine("Application shutting down.");
         }
     }
 }
