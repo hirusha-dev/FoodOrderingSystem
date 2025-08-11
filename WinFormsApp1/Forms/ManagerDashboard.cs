@@ -18,7 +18,7 @@ namespace FoodOrderingSystem.Forms
 
             // Initialize refresh timer
             refreshTimer = new System.Windows.Forms.Timer();
-            refreshTimer.Interval = 10000; // Refresh every 30 seconds
+            refreshTimer.Interval = 30000; // Refresh every 30 seconds
             refreshTimer.Tick += RefreshTimer_Tick;
             refreshTimer.Start();
 
@@ -170,18 +170,47 @@ namespace FoodOrderingSystem.Forms
 
                 reportText += $"Top Selling Items:\n";
                 reportText += $"------------------\n";
-                var topItems = (List<dynamic>)report["TopSellingItems"];
-                foreach (var item in topItems)
+
+                if (report["TopSellingItems"] is List<TopSellingItem> topItems)
                 {
-                    reportText += $"• {item.GetType().GetProperty("Item")?.GetValue(item)} - {item.GetType().GetProperty("Quantity")?.GetValue(item)} sold\n";
+                    foreach (var item in topItems)
+                    {
+                        reportText += $"• {item.ItemName} - {item.Quantity} sold\n";
+                    }
+                }
+                else
+                {
+                    reportText += "No sales data available\n";
+                }
+
+                reportText += $"\nDaily Revenue:\n";
+                reportText += $"--------------\n";
+
+                if (report["DailyRevenue"] is List<DailyRevenue> dailyRevenue)
+                {
+                    foreach (var day in dailyRevenue)
+                    {
+                        reportText += $"• {day.Date:MM/dd/yyyy} - ${day.Revenue:F2}\n";
+                    }
+                }
+                else
+                {
+                    reportText += "No daily revenue data available\n";
                 }
 
                 txtSalesReport.Text = reportText;
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading sales report: {ex.Message}", "Error",
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                var errorReport = $"Sales Report - Error Loading Data\n";
+                errorReport += $"=====================================\n";
+                errorReport += $"Error: {ex.Message}\n\n";
+                errorReport += $"This may occur if there are no completed orders in the system.\n";
+                errorReport += $"Try creating and completing some orders first.";
+
+                txtSalesReport.Text = errorReport;
+
+                Console.WriteLine($"Error loading sales report: {ex.Message}");
             }
         }
 

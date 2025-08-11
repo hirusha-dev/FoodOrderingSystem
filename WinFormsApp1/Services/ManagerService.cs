@@ -272,13 +272,13 @@ namespace FoodOrderingSystem.Services
                     ["TopSellingItems"] = orders
                         .SelectMany(o => o.OrderItems)
                         .GroupBy(oi => oi.MenuItem.Name)
-                        .Select(g => new { Item = g.Key, Quantity = g.Sum(oi => oi.Quantity) })
+                        .Select(g => new TopSellingItem { ItemName = g.Key, Quantity = g.Sum(oi => oi.Quantity) })
                         .OrderByDescending(x => x.Quantity)
                         .Take(5)
                         .ToList(),
                     ["DailyRevenue"] = orders
                         .GroupBy(o => o.OrderTime.Date)
-                        .Select(g => new { Date = g.Key, Revenue = g.Sum(o => o.TotalPrice) })
+                        .Select(g => new DailyRevenue { Date = g.Key, Revenue = g.Sum(o => o.TotalPrice) })
                         .OrderBy(x => x.Date)
                         .ToList()
                 };
@@ -339,5 +339,18 @@ namespace FoodOrderingSystem.Services
                 throw new Exception($"Error generating performance report: {ex.Message}");
             }
         }
+    }
+
+    // Helper classes for report data
+    public class TopSellingItem
+    {
+        public string ItemName { get; set; } = string.Empty;
+        public int Quantity { get; set; }
+    }
+
+    public class DailyRevenue
+    {
+        public DateTime Date { get; set; }
+        public decimal Revenue { get; set; }
     }
 }
