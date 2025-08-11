@@ -32,6 +32,9 @@ namespace FoodOrderingSystem.Models
 
         public bool IsAvailable { get; set; } = true;
 
+        [MaxLength(255)]
+        public string? ImagePath { get; set; }
+
         // Navigation property
         public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
     }

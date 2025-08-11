@@ -76,23 +76,31 @@ namespace FoodOrderingSystem.Data
             SeedData(modelBuilder);
         }
 
+        // Data/FoodOrderingContext.cs - REPLACE the SeedData method
         private void SeedData(ModelBuilder modelBuilder)
         {
+            // Use static dates instead of DateTime.Now
+            var staticDate = new DateTime(2025, 1, 1, 9, 0, 0);
+
             // Seed Users
             modelBuilder.Entity<User>().HasData(
-                new User { UserID = 1, Name = "Admin User", Username = "admin", Password = "admin123", Role = "Manager" },
-                new User { UserID = 2, Name = "John Waiter", Username = "waiter1", Password = "waiter123", Role = "Waiter" },
-                new User { UserID = 3, Name = "Maria Chef", Username = "chef1", Password = "chef123", Role = "Chef" }
+                new User { UserID = 1, Name = "Admin User", Username = "admin", Password = "admin123", Role = "Manager", CreatedDate = staticDate, IsActive = true },
+                new User { UserID = 2, Name = "John Waiter", Username = "waiter1", Password = "waiter123", Role = "Waiter", CreatedDate = staticDate, IsActive = true },
+                new User { UserID = 3, Name = "Maria Chef", Username = "chef1", Password = "chef123", Role = "Chef", CreatedDate = staticDate, IsActive = true },
+                new User { UserID = 4, Name = "Alice Waiter", Username = "waiter2", Password = "waiter123", Role = "Waiter", CreatedDate = staticDate, IsActive = true }, 
+                new User { UserID = 5, Name = "Carlos Chef", Username = "chef2", Password = "chef123", Role = "Chef", CreatedDate = staticDate, IsActive = true }      
             );
 
             // Seed Waiters
             modelBuilder.Entity<Waiter>().HasData(
-                new Waiter { UserID = 2, Specialty = "Customer Service", ShiftTime = "Day Shift" }
+                new Waiter { UserID = 2, Specialty = "Customer Service", ShiftTime = "Day Shift" },
+                new Waiter { UserID = 4, Specialty = "Outdoor Tables", ShiftTime = "Evening Shift" }
             );
 
             // Seed Chefs
             modelBuilder.Entity<Chef>().HasData(
-                new Chef { UserID = 3, Specialty = "Italian Cuisine", ShiftTime = "Day Shift" }
+                new Chef { UserID = 3, Specialty = "Italian Cuisine", ShiftTime = "Day Shift" },
+                new Chef { UserID = 5, Specialty = "Seafood", ShiftTime = "Night Shift" }
             );
 
             // Seed Tables
@@ -106,12 +114,13 @@ namespace FoodOrderingSystem.Data
 
             // Seed Menu Items
             modelBuilder.Entity<MenuItem>().HasData(
-                new MenuItem { ItemID = 1, Name = "Margherita Pizza", Description = "Classic pizza with tomato sauce and mozzarella", Price = 12.99m, Category = "Pizza" },
-                new MenuItem { ItemID = 2, Name = "Chicken Pasta", Description = "Creamy pasta with grilled chicken", Price = 14.99m, Category = "Pasta" },
-                new MenuItem { ItemID = 3, Name = "Caesar Salad", Description = "Fresh romaine lettuce with caesar dressing", Price = 8.99m, Category = "Salad" },
-                new MenuItem { ItemID = 4, Name = "Grilled Salmon", Description = "Fresh salmon with herbs and lemon", Price = 18.99m, Category = "Main Course" },
-                new MenuItem { ItemID = 5, Name = "Chocolate Cake", Description = "Rich chocolate cake with frosting", Price = 6.99m, Category = "Dessert" }
+                new MenuItem { ItemID = 1, Name = "Margherita Pizza", Description = "Classic pizza with tomato sauce and mozzarella", Price = 12.99m, Category = "Pizza", IsAvailable = true },
+                new MenuItem { ItemID = 2, Name = "Chicken Pasta", Description = "Creamy pasta with grilled chicken", Price = 14.99m, Category = "Pasta", IsAvailable = true },
+                new MenuItem { ItemID = 3, Name = "Caesar Salad", Description = "Fresh romaine lettuce with caesar dressing", Price = 8.99m, Category = "Salad", IsAvailable = true },
+                new MenuItem { ItemID = 4, Name = "Grilled Salmon", Description = "Fresh salmon with herbs and lemon", Price = 18.99m, Category = "Main Course", IsAvailable = true },
+                new MenuItem { ItemID = 5, Name = "Chocolate Cake", Description = "Rich chocolate cake with frosting", Price = 6.99m, Category = "Dessert", IsAvailable = true }
             );
         }
     }
 }
+// Note: Ensure you have the necessary using directives for Entity Framework Core and your models.

@@ -4,6 +4,7 @@ using FoodOrderingSystem.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FoodOrderingSystem.Migrations
 {
     [DbContext(typeof(FoodOrderingContext))]
-    partial class FoodOrderingContextModelSnapshot : ModelSnapshot
+    [Migration("20250805094751_AddSecondChefAndWaiter")]
+    partial class AddSecondChefAndWaiter
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -70,10 +73,6 @@ namespace FoodOrderingSystem.Migrations
                     b.Property<string>("Description")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("ImagePath")
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
 
                     b.Property<bool>("IsAvailable")
                         .HasColumnType("bit");

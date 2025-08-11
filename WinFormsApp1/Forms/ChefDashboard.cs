@@ -105,6 +105,8 @@ namespace FoodOrderingSystem.Forms
                         listItem.BackColor = Color.FromArgb(255, 248, 220); // Light yellow - attention
                     else if (order.Status == "InProgress")
                         listItem.BackColor = Color.FromArgb(220, 248, 255); // Light blue - in progress
+                    else if (order.Status == "Ready")
+                        listItem.BackColor = Color.FromArgb(220, 255, 220); // Light green - ready
 
                     lvPendingOrders.Items.Add(listItem);
                 }
@@ -210,6 +212,7 @@ namespace FoodOrderingSystem.Forms
                         "Order Accepted", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     await LoadPendingOrders();
                     await LoadOrderStatistics();
+                    await LoadAllOrders();
                 }
             }
             catch (Exception ex)
@@ -255,6 +258,7 @@ namespace FoodOrderingSystem.Forms
                         "Order Ready", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     await LoadPendingOrders();
                     await LoadOrderStatistics();
+                    await LoadAllOrders();
                 }
             }
             catch (Exception ex)

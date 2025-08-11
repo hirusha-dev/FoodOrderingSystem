@@ -68,7 +68,7 @@ namespace FoodOrderingSystem.Services
                     .Include(o => o.Table)
                     .Include(o => o.Waiter)
                         .ThenInclude(w => w.User)
-                    .Where(o => o.Status == "Pending" || o.Status == "InProgress")
+                    .Where(o => o.Status == "Pending" || o.Status == "InProgress" || o.Status == "Ready")
                     .OrderBy(o => o.OrderTime)
                     .ToListAsync();
             }
