@@ -9,30 +9,153 @@ namespace FoodOrderingSystem.Forms
         private List<MenuItem> menuItems = new List<MenuItem>();
         private List<OrderItemRequest> currentOrder = new List<OrderItemRequest>();
 
+        // Add image support
+        private ImageList? menuImageList;
+
         public WaiterDashboard()
         {
             InitializeComponent();
             this.WindowState = FormWindowState.Maximized;
             this.Text = $"Waiter Dashboard - {AuthenticationService.CurrentUser?.Name}";
+            InitializeMenuImageSupport(); // Initialize image support
             LoadMenuItems();
             LoadTables();
             RefreshCurrentOrder();
             LoadOrderHistory();
         }
 
+        private void InitializeMenuImageSupport()
+        {
+            // Initialize image list for menu items
+            menuImageList = new ImageList();
+            menuImageList.ImageSize = new Size(64, 64); // Size for ListView images
+            menuImageList.ColorDepth = ColorDepth.Depth32Bit;
+
+            // Set the image list to the ListView
+            lvMenu.LargeImageList = menuImageList;
+            lvMenu.SmallImageList = menuImageList;
+
+            // Set ListView to show images with details
+            lvMenu.View = View.Details;
+
+            // Set a minimum row height to properly display 64x64 images
+            SetListViewRowHeight();
+        }
+
+        private void SetListViewRowHeight()
+        {
+            // Set a minimum row height to properly display 64x64 images
+            // This is done by creating a temporary ImageList with larger images
+            var tempImageList = new ImageList();
+            tempImageList.ImageSize = new Size(1, 70); // Height of 70px for better image visibility
+            lvMenu.SmallImageList = tempImageList;
+            lvMenu.SmallImageList = menuImageList; // Reset to actual images
+        }
+
         private async void LoadMenuItems()
         {
             try
             {
+                Console.WriteLine("Loading menu items...");
                 menuItems = await MenuService.GetAllMenuItemsAsync();
+                Console.WriteLine($"Loaded {menuItems.Count} menu items");
+
+                await LoadMenuImages(); // Load images first
                 DisplayMenuItems();
                 await LoadCategories();
+
+                Console.WriteLine("Menu loading completed successfully");
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"Error loading menu: {ex}");
                 MessageBox.Show($"Error loading menu: {ex.Message}\n\nPlease check the database connection and try refreshing.", "Menu Loading Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        private async Task LoadMenuImages()
+        {
+            if (menuImageList == null) return;
+
+            menuImageList.Images.Clear();
+
+            foreach (var item in menuItems)
+            {
+                try
+                {
+                    Image? itemImage = null;
+
+                    // Load image if path exists
+                    if (!string.IsNullOrEmpty(item.ImagePath))
+                    {
+                        // Try to load from application directory
+                        string imagePath = Path.Combine(Application.StartupPath, item.ImagePath);
+
+                        if (File.Exists(imagePath))
+                        {
+                            itemImage = Image.FromFile(imagePath);
+                        }
+                        else if (File.Exists(item.ImagePath))
+                        {
+                            itemImage = Image.FromFile(item.ImagePath);
+                        }
+                    }
+
+                    // Create placeholder if no image found
+                    if (itemImage == null)
+                    {
+                        itemImage = CreatePlaceholderImage(item.Name);
+                    }
+
+                    // Resize image to fit the ListView
+                    var resizedImage = ResizeImage(itemImage, 64, 64);
+                    menuImageList.Images.Add(item.ItemID.ToString(), resizedImage);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error loading image for {item.Name}: {ex.Message}");
+                    // Add placeholder image
+                    var placeholder = CreatePlaceholderImage(item.Name);
+                    var resizedPlaceholder = ResizeImage(placeholder, 64, 64);
+                    menuImageList.Images.Add(item.ItemID.ToString(), resizedPlaceholder);
+                }
+            }
+        }
+
+        private Image CreatePlaceholderImage(string itemName)
+        {
+            var placeholder = new Bitmap(64, 64);
+            using (var g = Graphics.FromImage(placeholder))
+            {
+                g.Clear(Color.LightGray);
+                g.DrawRectangle(Pens.Gray, 0, 0, 63, 63);
+
+                // Draw text
+                using (var brush = new SolidBrush(Color.DarkGray))
+                using (var font = new Font("Segoe UI", 6F))
+                {
+                    var textRect = new Rectangle(2, 2, 60, 60);
+                    var sf = new StringFormat
+                    {
+                        Alignment = StringAlignment.Center,
+                        LineAlignment = StringAlignment.Center
+                    };
+                    g.DrawString("No Image", font, brush, textRect, sf);
+                }
+            }
+            return placeholder;
+        }
+
+        private Image ResizeImage(Image image, int width, int height)
+        {
+            var resized = new Bitmap(width, height);
+            using (var g = Graphics.FromImage(resized))
+            {
+                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                g.DrawImage(image, 0, 0, width, height);
+            }
+            return resized;
         }
 
         private async Task LoadCategories()
@@ -75,14 +198,23 @@ namespace FoodOrderingSystem.Forms
 
         private void DisplayMenuItems()
         {
+            if (menuImageList == null) return;
+
             lvMenu.Items.Clear();
 
             foreach (var item in menuItems)
             {
                 var listItem = new ListViewItem(item.Name);
                 listItem.SubItems.Add(item.Category);
-                listItem.SubItems.Add($"${item.Price:F2}");
+                listItem.SubItems.Add($"LKR {item.Price:F2}"); // Changed from $ to LKR
                 listItem.SubItems.Add(item.Description ?? "");
+
+                // Set the image for this item
+                if (menuImageList.Images.ContainsKey(item.ItemID.ToString()))
+                {
+                    listItem.ImageKey = item.ItemID.ToString();
+                }
+
                 listItem.Tag = item;
                 lvMenu.Items.Add(listItem);
             }
@@ -101,6 +233,7 @@ namespace FoodOrderingSystem.Forms
                     string selectedCategory = cmbCategory.SelectedItem.ToString()!;
                     menuItems = await MenuService.GetMenuItemsByCategoryAsync(selectedCategory);
                 }
+                await LoadMenuImages(); // Reload images for filtered items
                 DisplayMenuItems();
             }
             catch (Exception ex)
@@ -132,6 +265,8 @@ namespace FoodOrderingSystem.Forms
                 var quantity = (int)nudQuantity.Value;
                 var specialInstructions = txtSpecialInstructions.Text.Trim();
 
+                Console.WriteLine($"Adding to order: {selectedItem.Name} x{quantity}");
+
                 // Check if item already exists in current order
                 var existingItem = currentOrder.FirstOrDefault(oi => oi.ItemID == selectedItem.ItemID &&
                                                                      oi.SpecialInstructions == specialInstructions);
@@ -139,6 +274,7 @@ namespace FoodOrderingSystem.Forms
                 if (existingItem != null)
                 {
                     existingItem.Quantity += quantity;
+                    Console.WriteLine($"Updated existing item quantity to {existingItem.Quantity}");
                 }
                 else
                 {
@@ -148,6 +284,7 @@ namespace FoodOrderingSystem.Forms
                         Quantity = quantity,
                         SpecialInstructions = string.IsNullOrEmpty(specialInstructions) ? null : specialInstructions
                     });
+                    Console.WriteLine($"Added new item to order. Total items in order: {currentOrder.Count}");
                 }
 
                 RefreshCurrentOrder();
@@ -161,6 +298,7 @@ namespace FoodOrderingSystem.Forms
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"Error adding item to order: {ex}");
                 MessageBox.Show($"Error adding item to order: {ex.Message}", "Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
@@ -195,8 +333,8 @@ namespace FoodOrderingSystem.Forms
                 {
                     var listItem = new ListViewItem(menuItem.Name);
                     listItem.SubItems.Add(orderItem.Quantity.ToString());
-                    listItem.SubItems.Add($"${menuItem.Price:F2}");
-                    listItem.SubItems.Add($"${(menuItem.Price * orderItem.Quantity):F2}");
+                    listItem.SubItems.Add($"LKR {menuItem.Price:F2}"); // Changed from $ to LKR
+                    listItem.SubItems.Add($"LKR {(menuItem.Price * orderItem.Quantity):F2}"); // Changed from $ to LKR
                     listItem.SubItems.Add(orderItem.SpecialInstructions ?? "");
                     listItem.Tag = orderItem;
                     lvCurrentOrder.Items.Add(listItem);
@@ -205,8 +343,8 @@ namespace FoodOrderingSystem.Forms
                 }
             }
 
-            lblOrderTotal.Text = $"Order Total: ${total:F2}";
-            // FIX: Enable button when there are items, regardless of table selection
+            lblOrderTotal.Text = $"Order Total: LKR {total:F2}"; // Changed from $ to LKR
+            // Enable button when there are items, regardless of table selection
             btnSubmitOrder.Enabled = currentOrder.Count > 0;
         }
 
@@ -273,6 +411,9 @@ namespace FoodOrderingSystem.Forms
                 // Extract table ID from combo box text
                 string tableText = cmbTable.SelectedItem.ToString()!;
 
+                // Debug: Show what we're parsing
+                Console.WriteLine($"Parsing table text: {tableText}");
+
                 // Parse table ID more carefully
                 int tableId;
                 try
@@ -293,7 +434,10 @@ namespace FoodOrderingSystem.Forms
 
                 // Get waiter ID
                 int waiterId = AuthenticationService.CurrentUser.UserID;
-     
+
+                // Debug information
+                Console.WriteLine($"Submitting order: TableID={tableId}, WaiterID={waiterId}, Items={currentOrder.Count}");
+
                 // Create the order
                 int orderId = await OrderService.CreateOrderAsync(tableId, waiterId, currentOrder);
 
@@ -330,6 +474,9 @@ namespace FoodOrderingSystem.Forms
 
                 MessageBox.Show(errorMessage, "Submit Order Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                // Log to console for debugging
+                Console.WriteLine($"Submit Order Error: {ex}");
             }
             finally
             {
@@ -373,7 +520,7 @@ namespace FoodOrderingSystem.Forms
                     listItem.SubItems.Add($"Table {order.TableNumber}");
                     listItem.SubItems.Add(order.OrderTime.ToString("MM/dd/yyyy HH:mm"));
                     listItem.SubItems.Add(order.Status);
-                    listItem.SubItems.Add($"${order.TotalPrice:F2}");
+                    listItem.SubItems.Add($"LKR {order.TotalPrice:F2}"); // Changed from $ to LKR
                     listItem.SubItems.Add($"{order.OrderItems.Sum(oi => oi.Quantity)} items");
 
                     // Add order details
